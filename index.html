@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STUN/TURN Server Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            border-left: 4px solid;
+        }
+
+        .log-info {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+            color: #0d47a1;
+        }
+
+        .log-success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+            color: #1b5e20;
+        }
+
+        .log-warning {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+            color: #e65100;
+        }
+
+        .log-error {
+            background: #ffebee;
+            border-left-color: #f44336;
+            color: #b71c1c;
+        }
+
+        .log-debug {
+            background: #f3e5f5;
+            border-left-color: #9c27b0;
+            color: #4a148c;
+        }
+
+        .timestamp {
+            color: #999;
+            font-size: 11px;
+            margin-right: 10px;
+        }
+
+        .summary {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .summary-value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-error {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-testing {
+            background: #ff9800;
+            color: white;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .ice-candidate {
+            background: #e8eaf6;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+
+        .candidate-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .type-host { background: #81c784; color: white; }
+        .type-srflx { background: #64b5f6; color: white; }
+        .type-relay { background: #ba68c8; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 STUN/TURN Server Test</h1>
+        <p class="subtitle">Test your STUN/TURN server configuration and ICE candidate gathering</p>
+
+        <div class="config-section">
+            <div class="input-group">
+                <label>STUN Server URL:</label>
+                <input type="text" id="stunServer" value="stun:20.70.128.185:3478" placeholder="stun:host:port">
+            </div>
+            <div class="input-group">
+                <label>TURN Server URL:</label>
+                <input type="text" id="turnServer" value="turn:20.70.128.185:3478" placeholder="turn:host:port">
+            </div>
+            <div class="input-group">
+                <label>TURN Username:</label>
+                <input type="text" id="turnUsername" value="guest" placeholder="username">
+            </div>
+            <div class="input-group">
+                <label>TURN Password:</label>
+                <input type="password" id="turnPassword" value="videomeet" placeholder="password">
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-primary" id="testBtn" onclick="runTest()">
+                <span id="btnIcon">▶️</span>
+                <span id="btnText">Start Test</span>
+            </button>
+            <button class="btn-secondary" onclick="clearResults()">🗑️ Clear</button>
+        </div>
+
+        <div class="results" id="results"></div>
+
+        <div class="summary" id="summary" style="display: none;">
+            <h3 style="margin-bottom: 15px; color: #333;">📊 Test Summary</h3>
+            <div id="summaryContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let pc = null;
+        let testResults = {
+            stunWorking: false,
+            turnWorking: false,
+            candidates: {
+                host: 0,
+                srflx: 0,
+                relay: 0
+            },
+            startTime: null,
+            endTime: null
+        };
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString('en-US', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                fractionalSecondDigits: 3
+            });
+            
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+            results.appendChild(entry);
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+            testResults = {
+                stunWorking: false,
+                turnWorking: false,
+                candidates: { host: 0, srflx: 0, relay: 0 },
+                startTime: null,
+                endTime: null
+            };
+        }
+
+        function updateButton(testing) {
+            const btn = document.getElementById('testBtn');
+            const btnIcon = document.getElementById('btnIcon');
+            const btnText = document.getElementById('btnText');
+            
+            if (testing) {
+                btn.disabled = true;
+                btnIcon.innerHTML = '<div class="spinner"></div>';
+                btnText.textContent = 'Testing...';
+            } else {
+                btn.disabled = false;
+                btnIcon.textContent = '▶️';
+                btnText.textContent = 'Start Test';
+            }
+        }
+
+        function showSummary() {
+            const summary = document.getElementById('summary');
+            const content = document.getElementById('summaryContent');
+            const duration = testResults.endTime - testResults.startTime;
+
+            let html = `
+                <div class="summary-item">
+                    <span class="summary-label">Test Duration:</span>
+                    <span class="summary-value">${(duration / 1000).toFixed(2)}s</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">STUN Server Status:</span>
+                    <span class="status-badge ${testResults.stunWorking ? 'status-success' : 'status-error'}">
+                        ${testResults.stunWorking ? '✅ Working' : '❌ Failed'}
+                    </span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">TURN Server Status:</span>
+                    <span class="status-badge ${testResults.turnWorking ? 'status-success' : 'status-error'}">
+                        ${testResults.turnWorking ? '✅ Working' : '❌ Failed'}
+                    </span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Host Candidates:</span>
+                    <span class="summary-value">${testResults.candidates.host}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Server Reflexive (srflx):</span>
+                    <span class="summary-value">${testResults.candidates.srflx}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Relay Candidates:</span>
+                    <span class="summary-value">${testResults.candidates.relay}</span>
+                </div>
+            `;
+
+            content.innerHTML = html;
+            summary.style.display = 'block';
+        }
+
+        async function runTest() {
+            clearResults();
+            updateButton(true);
+            testResults.startTime = Date.now();
+
+            log('🚀 Starting STUN/TURN server test...', 'info');
+
+            const stunServer = document.getElementById('stunServer').value;
+            const turnServer = document.getElementById('turnServer').value;
+            const turnUsername = document.getElementById('turnUsername').value;
+            const turnPassword = document.getElementById('turnPassword').value;
+
+            log(`📡 STUN Server: ${stunServer}`, 'debug');
+            log(`🔄 TURN Server: ${turnServer}`, 'debug');
+            log(`👤 TURN Username: ${turnUsername}`, 'debug');
+
+            const config = {
+                iceServers: [
+                    {
+                        urls: stunServer
+                    },
+                    {
+                        urls: turnServer,
+                        username: turnUsername,
+                        credential: turnPassword
+                    }
+                ],
+                iceCandidatePoolSize: 0
+            };
+
+            log('🔧 Creating RTCPeerConnection...', 'info');
+            log(`Config: ${JSON.stringify(config, null, 2)}`, 'debug');
+
+            try {
+                pc = new RTCPeerConnection(config);
+                log('✅ RTCPeerConnection created successfully', 'success');
+
+                // Listen for ICE gathering state changes
+                pc.addEventListener('icegatheringstatechange', () => {
+                    const state = pc.iceGatheringState;
+                    log(`🧊 ICE gathering state: ${state}`, 'info');
+
+                    if (state === 'gathering') {
+                        log('⏳ Gathering ICE candidates...', 'info');
+                    } else if (state === 'complete') {
+                        log('🎉 ICE gathering complete!', 'success');
+                        testResults.endTime = Date.now();
+                        
+                        // Analyze results
+                        if (testResults.candidates.srflx > 0) {
+                            testResults.stunWorking = true;
+                            log('✅ STUN server is working (found srflx candidates)', 'success');
+                        } else {
+                            log('❌ STUN server might not be working (no srflx candidates)', 'error');
+                        }
+
+                        if (testResults.candidates.relay > 0) {
+                            testResults.turnWorking = true;
+                            log('✅ TURN server is working (found relay candidates)', 'success');
+                        } else {
+                            log('❌ TURN server might not be working (no relay candidates)', 'error');
+                        }
+
+                        setTimeout(() => {
+                            showSummary();
+                            updateButton(false);
+                            pc.close();
+                        }, 1000);
+                    }
+                });
+
+                // Listen for ICE connection state changes
+                pc.addEventListener('iceconnectionstatechange', () => {
+                    const state = pc.iceConnectionState;
+                    log(`🌐 ICE connection state: ${state}`, 'info');
+                });
+
+                // Listen for ICE candidates
+                pc.addEventListener('icecandidate', (event) => {
+                    if (event.candidate) {
+                        const candidate = event.candidate;
+                        const parts = candidate.candidate.split(' ');
+                        const type = candidate.type || 'unknown';
+                        const protocol = parts[2] || 'unknown';
+                        const address = parts[4] || 'unknown';
+                        const port = parts[5] || 'unknown';
+
+                        // Count candidate types
+                        if (type === 'host') testResults.candidates.host++;
+                        else if (type === 'srflx') testResults.candidates.srflx++;
+                        else if (type === 'relay') testResults.candidates.relay++;
+
+                        let emoji = '📍';
+                        if (type === 'host') emoji = '🏠';
+                        else if (type === 'srflx') emoji = '🌐';
+                        else if (type === 'relay') emoji = '🔄';
+
+                        log(`${emoji} ICE Candidate found:
+                            <div class="ice-candidate">
+                                <span class="candidate-type type-${type}">${type.toUpperCase()}</span>
+                                <strong>${protocol}</strong> ${address}:${port}
+                                <br><small style="color: #666;">Foundation: ${candidate.foundation} | Priority: ${candidate.priority}</small>
+                            </div>`, 'success');
+                    } else {
+                        log('🏁 All ICE candidates gathered (candidate is null)', 'info');
+                    }
+                });
+
+                // Create a data channel to trigger ICE gathering
+                log('📢 Creating data channel to trigger ICE gathering...', 'info');
+                const dataChannel = pc.createDataChannel('test');
+                
+                // Create and set local description
+                log('📝 Creating offer...', 'info');
+                const offer = await pc.createOffer();
+                log('✅ Offer created', 'success');
+                
+                log('💾 Setting local description...', 'info');
+                await pc.setLocalDescription(offer);
+                log('✅ Local description set - ICE gathering should start now', 'success');
+
+                // Set timeout to catch if ICE gathering never completes
+                setTimeout(() => {
+                    if (pc && pc.iceGatheringState !== 'complete') {
+                        log('⏱️ Timeout: ICE gathering did not complete in 30 seconds', 'error');
+                        log('⚠️ This might indicate network issues or server problems', 'warning');
+                        testResults.endTime = Date.now();
+                        showSummary();
+                        updateButton(false);
+                        pc.close();
+                    }
+                }, 30000);
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                log(`Stack: ${error.stack}`, 'debug');
+                testResults.endTime = Date.now();
+                updateButton(false);
+            }
+        }
+
+        // Log browser info on load
+        window.addEventListener('load', () => {
+            log(`🌍 Browser: ${navigator.userAgent}`, 'debug');
+            log(`📍 Platform: ${navigator.platform}`, 'debug');
+            log('ℹ️ Ready to test. Click "Start Test" button.', 'info');
+        });
+    </script>
+</body>
+</html>
