@@ -8,7 +8,7 @@ It helps you quickly verify your **ICE configuration**, check **STUN / TURN** co
 ## Live Demo
 
 🔗 **Try it instantly:**  
-👉 [https://xuantruongg03.github.io/stun-turn-tester/](https://xuantruongg03.github.io/stun-turn-tester/)
+👉 [https://xuantruongg03.github.io/stun-turn-check/](https://xuantruongg03.github.io/stun-turn-check/)
 
 *(If you fork this repo, you can easily deploy your own static version — see instructions below.)*
 
